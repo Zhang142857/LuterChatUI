@@ -25,7 +25,7 @@
 
 ### 模型选择
 
-![1744531765955](images/README/1744531765955.png)![模型选择](https://raw.githubusercontent.com/Zhang142857/LuterChatUI/main/screenshots/models.png)
+![1744531765955](images/README/1744531765955.png)
 
 ### 设置界面
 
