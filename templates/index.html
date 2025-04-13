@@ -1,0 +1,32 @@
+<style>
+/* 强制CSS作用域以确保文本正常流动 */
+#app-container {
+    white-space: normal !important;
+}
+
+#app-container * {
+    white-space: inherit;
+}
+
+#messages-container {
+    display: flex;
+    flex-direction: column;
+}
+
+#messages-container .message {
+    width: 100%;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* 修复段落之间的间距问题 */
+#messages-container p {
+    margin-top: 0;
+}
+
+/* 确保代码块正确显示 */
+#messages-container pre {
+    white-space: pre-wrap !important;
+}
+</style> 

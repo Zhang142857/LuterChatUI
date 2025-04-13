@@ -1,0 +1,700 @@
+{% extends "base.html" %}
+
+{% block title %}设置 - AI对话助手{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div class="shadow overflow-hidden sm:rounded-lg">
+                <!-- 页面标题 -->
+                <div class="px-4 py-5 border-b border-gray-200 sm:px-6 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
+                            设置
+                        </h3>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                            配置您的账户和应用选项
+                        </p>
+                    </div>
+                    <a href="{{ url_for('chat') }}" class="text-indigo-600 hover:text-indigo-900">
+                        <i class="fas fa-arrow-left mr-1"></i> 返回聊天
+                    </a>
+                </div>
+                
+                <!-- 设置内容 -->
+                <div class="flex">
+                    <!-- 左侧导航 -->
+                    <div class="w-64 border-r border-gray-200 bg-gray-50">
+                        <nav class="py-4 px-4">
+                            <ul>
+                                <li class="mb-2">
+                                    <a href="#account" class="settings-nav-item active block px-4 py-2 rounded text-gray-900 hover:bg-gray-200 font-medium" data-target="account-settings">
+                                        <i class="fas fa-user-circle mr-2"></i> 账户设置
+                                    </a>
+                                </li>
+                                <li class="mb-2">
+                                    <a href="#general" class="settings-nav-item block px-4 py-2 rounded text-gray-900 hover:bg-gray-200 font-medium" data-target="general-settings">
+                                        <i class="fas fa-cog mr-2"></i> 通用设置
+                                    </a>
+                                </li>
+                                <li class="mb-2">
+                                    <a href="#api" class="settings-nav-item block px-4 py-2 rounded text-gray-900 hover:bg-gray-200 font-medium" data-target="api-settings">
+                                        <i class="fas fa-plug mr-2"></i> API设置
+                                    </a>
+                                </li>
+                                <li class="mb-2">
+                                    <a href="#conversations" class="settings-nav-item block px-4 py-2 rounded text-gray-900 hover:bg-gray-200 font-medium" data-target="conversation-management">
+                                        <i class="fas fa-comments mr-2"></i> 对话管理
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                    
+                    <!-- 右侧设置内容 -->
+                    <div class="flex-1">
+                        <form id="api-settings-form">
+                            <!-- 账户设置 -->
+                            <div id="account-settings" class="settings-section px-6 py-6">
+                                <h3 class="text-lg font-medium text-gray-900 mb-4">账户设置</h3>
+                                <div class="space-y-6">
+                                    <div class="bg-white shadow sm:rounded-md">
+                                        <div class="px-4 py-5 sm:p-6">
+                                            <div class="grid grid-cols-6 gap-6">
+                                                <div class="col-span-6 sm:col-span-4">
+                                                    <label class="block text-sm font-medium text-gray-700">用户名</label>
+                                                    <div class="mt-1 p-2 border border-gray-300 rounded-md bg-gray-50">
+                                                        {{ user.username }}
+                                                    </div>
+                                                    <p class="mt-1 text-sm text-gray-500">您的账户登录名</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 通用设置 -->
+                            <div id="general-settings" class="settings-section hidden px-6 py-6">
+                                <h3 class="text-lg font-medium text-gray-900 mb-4">通用设置</h3>
+                                <div class="space-y-6">
+                                    <div class="bg-white shadow sm:rounded-md">
+                                        <div class="px-4 py-5 sm:p-6">
+                                            <div class="grid grid-cols-6 gap-6">
+                                                <div class="col-span-6 sm:col-span-4">
+                                                    <label for="default_model" class="block text-sm font-medium text-gray-700">默认模型</label>
+                                                    <select id="default_model" name="default_model" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                                        {% for model in models %}
+                                                        <option value="{{ model }}" {% if user.default_model == model %}selected{% endif %}>{{ model }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <p class="mt-1 text-sm text-gray-500">默认使用的AI模型</p>
+                                                </div>
+                                                
+                                                <!-- 主题设置 -->
+                                                <div class="col-span-6 border-t pt-4 mt-4">
+                                                    <h4 class="font-medium text-gray-700 mb-3">主题设置</h4>
+                                                </div>
+                                                
+                                                <div class="col-span-6 sm:col-span-4">
+                                                    <label class="block text-sm font-medium text-gray-700 mb-2">界面主题</label>
+                                                    <div class="flex flex-wrap space-x-4">
+                                                        <!-- 彩色模式 -->
+                                                        <label class="theme-option relative inline-flex flex-col items-center cursor-pointer">
+                                                            <input type="radio" name="theme" value="colorful" class="sr-only" 
+                                                                   {% if user.theme == 'colorful' or not user.theme %}checked{% endif %}>
+                                                            <div class="theme-preview colorful-preview w-32 h-20 rounded-lg border-2 overflow-hidden 
+                                                                      {% if user.theme == 'colorful' or not user.theme %}border-indigo-500{% else %}border-gray-200{% endif %}">
+                                                                <div class="h-5 bg-indigo-600"></div>
+                                                                <div class="h-15 bg-white p-2">
+                                                                    <div class="bg-indigo-100 h-3 w-full rounded-full mb-2"></div>
+                                                                    <div class="bg-gray-100 h-3 w-3/4 rounded-full"></div>
+                                                                </div>
+                                                            </div>
+                                                            <span class="mt-2 text-sm text-gray-700">彩色模式</span>
+                                                        </label>
+                                                        
+                                                        <!-- 明亮模式 -->
+                                                        <label class="theme-option relative inline-flex flex-col items-center cursor-pointer">
+                                                            <input type="radio" name="theme" value="light" class="sr-only"
+                                                                   {% if user.theme == 'light' %}checked{% endif %}>
+                                                            <div class="theme-preview light-preview w-32 h-20 rounded-lg border-2 overflow-hidden
+                                                                      {% if user.theme == 'light' %}border-indigo-500{% else %}border-gray-200{% endif %}">
+                                                                <div class="h-5 bg-gray-200"></div>
+                                                                <div class="h-15 bg-white p-2">
+                                                                    <div class="bg-gray-200 h-3 w-full rounded-full mb-2"></div>
+                                                                    <div class="bg-gray-100 h-3 w-3/4 rounded-full"></div>
+                                                                </div>
+                                                            </div>
+                                                            <span class="mt-2 text-sm text-gray-700">明亮模式</span>
+                                                        </label>
+                                                        
+                                                        <!-- 黑暗模式 -->
+                                                        <label class="theme-option relative inline-flex flex-col items-center cursor-pointer">
+                                                            <input type="radio" name="theme" value="dark" class="sr-only"
+                                                                   {% if user.theme == 'dark' %}checked{% endif %}>
+                                                            <div class="theme-preview dark-preview w-32 h-20 rounded-lg border-2 overflow-hidden
+                                                                      {% if user.theme == 'dark' %}border-indigo-500{% else %}border-gray-200{% endif %}">
+                                                                <div class="h-5 bg-gray-800"></div>
+                                                                <div class="h-15 bg-gray-900 p-2">
+                                                                    <div class="bg-gray-700 h-3 w-full rounded-full mb-2"></div>
+                                                                    <div class="bg-gray-800 h-3 w-3/4 rounded-full"></div>
+                                                                </div>
+                                                            </div>
+                                                            <span class="mt-2 text-sm text-gray-700">黑暗模式</span>
+                                                        </label>
+                                                        
+                                                        <!-- 明亮微观模式 -->
+                                                        <label class="theme-option relative inline-flex flex-col items-center cursor-pointer">
+                                                            <input type="radio" name="theme" value="light_micro" class="sr-only"
+                                                                   {% if user.theme == 'light_micro' %}checked{% endif %}>
+                                                            <div class="theme-preview light-micro-preview w-32 h-20 rounded-lg border-2 overflow-hidden
+                                                                      {% if user.theme == 'light_micro' %}border-indigo-500{% else %}border-gray-200{% endif %}">
+                                                                <div class="h-5 bg-gray-200"></div>
+                                                                <div class="h-15 bg-white p-2">
+                                                                    <div class="bg-gray-200 h-3 w-full rounded-full mb-2"></div>
+                                                                    <div class="bg-gray-100 h-3 w-3/4 rounded-full"></div>
+                                                                </div>
+                                                            </div>
+                                                            <span class="mt-2 text-sm text-gray-700">明亮微观</span>
+                                                        </label>
+                                                        
+                                                        <!-- 黑暗微观模式 -->
+                                                        <label class="theme-option relative inline-flex flex-col items-center cursor-pointer">
+                                                            <input type="radio" name="theme" value="dark_micro" class="sr-only"
+                                                                   {% if user.theme == 'dark_micro' %}checked{% endif %}>
+                                                            <div class="theme-preview dark-micro-preview w-32 h-20 rounded-lg border-2 overflow-hidden
+                                                                      {% if user.theme == 'dark_micro' %}border-indigo-500{% else %}border-gray-200{% endif %}">
+                                                                <div class="h-5 bg-gray-800"></div>
+                                                                <div class="h-15 bg-gray-900 p-2">
+                                                                    <div class="bg-gray-700 h-3 w-full rounded-full mb-2"></div>
+                                                                    <div class="bg-gray-800 h-3 w-3/4 rounded-full"></div>
+                                                                </div>
+                                                            </div>
+                                                            <span class="mt-2 text-sm text-gray-700">黑暗微观</span>
+                                                        </label>
+                                                    </div>
+                                                    <p class="mt-2 text-sm text-gray-500">选择界面显示风格</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- API设置 -->
+                            <div id="api-settings" class="settings-section hidden px-6 py-6">
+                                <h3 class="text-lg font-medium text-gray-900 mb-4">API设置</h3>
+                                <div class="space-y-6">
+                                    <div class="bg-white shadow sm:rounded-md">
+                                        <div class="px-4 py-5 sm:p-6">
+                                            <div class="grid grid-cols-6 gap-6">
+                                                <!-- 硅基流动API设置 -->
+                                                <div class="col-span-6">
+                                                    <h4 class="font-medium text-gray-700 mb-3">硅基流动 API</h4>
+                                                </div>
+                                                
+                                                <div class="col-span-6 sm:col-span-4">
+                                                    <label for="api_key" class="block text-sm font-medium text-gray-700">API密钥</label>
+                                                    <input type="password" name="api_key" id="api_key" value="{{ user.api_key or '' }}" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                    <p class="mt-1 text-sm text-gray-500">您的硅基流动API密钥</p>
+                                                </div>
+                                                <div class="col-span-6 sm:col-span-4">
+                                                    <label for="api_base_url" class="block text-sm font-medium text-gray-700">API基础URL</label>
+                                                    <input type="text" name="api_base_url" id="api_base_url" value="{{ user.api_base_url or 'https://api.siliconflow.cn/v1' }}" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                    <p class="mt-1 text-sm text-gray-500">硅基流动API的基础URL</p>
+                                                </div>
+                                                
+                                                <!-- 智谱清言API设置 -->
+                                                <div class="col-span-6 border-t pt-4 mt-4">
+                                                    <h4 class="font-medium text-gray-700 mb-3">智谱清言 API</h4>
+                                                </div>
+                                                
+                                                <div class="col-span-6 sm:col-span-4">
+                                                    <label for="zhipuai_api_key" class="block text-sm font-medium text-gray-700">API密钥</label>
+                                                    <input type="password" name="zhipuai_api_key" id="zhipuai_api_key" value="{{ user.zhipuai_api_key or '' }}" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                    <p class="mt-1 text-sm text-gray-500">您的智谱清言API密钥</p>
+                                                </div>
+                                                <div class="col-span-6 sm:col-span-4">
+                                                    <label for="zhipuai_api_base_url" class="block text-sm font-medium text-gray-700">API基础URL</label>
+                                                    <input type="text" name="zhipuai_api_base_url" id="zhipuai_api_base_url" value="{{ user.zhipuai_api_base_url or 'https://open.bigmodel.cn/api/paas/v4' }}" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                                    <p class="mt-1 text-sm text-gray-500">智谱清言API的基础URL</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 对话管理 -->
+                            <div id="conversation-management" class="settings-section hidden px-6 py-6">
+                                <h3 class="text-lg font-medium text-gray-900 mb-4">对话管理</h3>
+                                <div class="space-y-6">
+                                    <div class="bg-white shadow sm:rounded-md">
+                                        <div class="px-4 py-5 sm:p-6">
+                                            <h4 class="text-base font-medium text-gray-900 mb-2">清除所有对话</h4>
+                                            <p class="text-sm text-gray-500 mb-4">
+                                                此操作将永久删除您的所有对话记录，且无法恢复
+                                            </p>
+                                            <button type="button" id="clear-all-conversations" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                                <i class="fas fa-trash-alt mr-2"></i> 清除所有对话
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 保存按钮 -->
+                            <div class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex justify-between">
+                                <span id="settings-save-status" class="text-sm text-green-600 hidden mt-2"></span>
+                                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    保存设置
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 通知区域 -->
+<div id="notification-area" class="fixed bottom-4 right-4 z-50 flex flex-col space-y-2"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const apiSettingsForm = document.getElementById('api-settings-form');
+    const navItems = document.querySelectorAll('.settings-nav-item');
+    const settingsSections = document.querySelectorAll('.settings-section');
+    const themeOptions = document.querySelectorAll('input[name="theme"]');
+    
+    // 主题选项切换事件
+    themeOptions.forEach(option => {
+        option.addEventListener('change', function() {
+            // 移除所有预览的选中边框
+            document.querySelectorAll('.theme-preview').forEach(preview => {
+                preview.classList.remove('border-indigo-500');
+                preview.classList.add('border-gray-200');
+            });
+            
+            // 为当前选中项添加边框
+            const selectedPreview = this.parentElement.querySelector('.theme-preview');
+            selectedPreview.classList.remove('border-gray-200');
+            selectedPreview.classList.add('border-indigo-500');
+        });
+    });
+    
+    // 导航切换
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // 移除所有导航项的active类
+            navItems.forEach(nav => nav.classList.remove('active', 'bg-gray-200'));
+            
+            // 隐藏所有设置部分
+            settingsSections.forEach(section => section.classList.add('hidden'));
+            
+            // 添加active类到当前点击的导航项
+            this.classList.add('active', 'bg-gray-200');
+            
+            // 显示目标设置部分
+            const targetId = this.getAttribute('data-target');
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.classList.remove('hidden');
+            }
+        });
+    });
+    
+    // 表单提交
+    apiSettingsForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const apiKey = document.getElementById('api_key').value;
+        const apiBaseUrl = document.getElementById('api_base_url').value;
+        const zhipuaiApiKey = document.getElementById('zhipuai_api_key').value;
+        const zhipuaiApiBaseUrl = document.getElementById('zhipuai_api_base_url').value;
+        const defaultModel = document.getElementById('default_model').value;
+        const theme = document.querySelector('input[name="theme"]:checked').value;
+        
+        fetch('/api/settings', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                api_key: apiKey,
+                api_base_url: apiBaseUrl,
+                zhipuai_api_key: zhipuaiApiKey,
+                zhipuai_api_base_url: zhipuaiApiBaseUrl,
+                default_model: defaultModel,
+                theme: theme
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('设置已保存', 'success');
+                
+                // 如果主题改变，则应用新主题
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                if (theme !== currentTheme) {
+                    document.documentElement.setAttribute('data-theme', theme);
+                    
+                    // 确保applyTheme函数存在并调用
+                    if (typeof applyTheme === 'function') {
+                        applyTheme(theme);
+                    }
+                    
+                    // 为确保所有主题变化都被应用，延迟刷新页面
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 800);
+                }
+            }
+        });
+    });
+    
+    // 清除所有对话按钮事件
+    document.getElementById('clear-all-conversations').addEventListener('click', function() {
+        if (confirm('确定要清除所有对话记录吗？此操作不可撤销！')) {
+            // 显示加载中状态
+            const saveStatus = document.getElementById('settings-save-status');
+            saveStatus.textContent = '正在清除对话...';
+            saveStatus.classList.remove('hidden');
+            
+            // 发送清除请求
+            fetch('/api/clear_all_conversations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('所有对话已清除', 'success');
+                } else {
+                    showNotification('清除失败: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('清除对话出错:', error);
+                showNotification('清除失败，请稍后重试', 'error');
+            })
+            .finally(() => {
+                // 隐藏提示
+                saveStatus.classList.add('hidden');
+            });
+        }
+    });
+    
+    // 从URL参数获取当前部分
+    function getActiveSection() {
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+            const navItem = document.querySelector(`.settings-nav-item[href="#${hash}"]`);
+            if (navItem) {
+                navItem.click();
+            }
+        }
+    }
+    
+    // 页面加载时检查URL
+    getActiveSection();
+    
+    // 监听URL变化
+    window.addEventListener('hashchange', getActiveSection);
+    
+    // 显示通知的函数
+    function showNotification(message, type = 'success') {
+        // 创建通知
+        const notification = document.createElement('div');
+        notification.className = `notification bg-white border-l-4 border-${type === 'success' ? 'green' : 'red'}-500 p-4 mb-4 shadow-md rounded-md`;
+        notification.innerHTML = `
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-${type === 'success' ? 'check-circle text-green' : 'exclamation-circle text-red'}-500"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-gray-700">${message}</p>
+                </div>
+                <div class="ml-auto pl-3">
+                    <div class="-mx-1.5 -my-1.5">
+                        <button class="close-notification inline-flex bg-white rounded-md p-1.5 text-gray-400 hover:text-gray-500 focus:outline-none">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // 添加通知到通知区域
+        const notificationArea = document.getElementById('notification-area');
+        notificationArea.appendChild(notification);
+        
+        // 设置定时器，5秒后自动移除通知
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+        
+        // 添加关闭按钮事件
+        const closeButton = notification.querySelector('.close-notification');
+        closeButton.addEventListener('click', function() {
+            notification.remove();
+        });
+    }
+    
+    // 应用主题的函数
+    function applyTheme(theme) {
+        // 设置HTML标签的data-theme属性
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        // 存储主题到本地存储
+        localStorage.setItem('theme', theme);
+        
+        // 应用主题特定的样式
+        if (theme === 'dark') {
+            // 黑暗模式特定调整
+            document.querySelectorAll('.bg-gray-100').forEach(el => {
+                el.classList.remove('bg-gray-100');
+                el.classList.add('bg-gray-800');
+            });
+            
+            document.querySelectorAll('.text-gray-900').forEach(el => {
+                el.classList.remove('text-gray-900');
+                el.classList.add('text-gray-100');
+            });
+            
+            document.querySelectorAll('.text-gray-700').forEach(el => {
+                el.classList.remove('text-gray-700');
+                el.classList.add('text-gray-300');
+            });
+            
+            document.querySelectorAll('.text-gray-500').forEach(el => {
+                el.classList.remove('text-gray-500');
+                el.classList.add('text-gray-400');
+            });
+            
+            // 背景调整
+            document.querySelectorAll('.bg-gray-50').forEach(el => {
+                el.classList.remove('bg-gray-50');
+                el.classList.add('bg-black');
+            });
+            
+            document.querySelectorAll('.bg-white').forEach(el => {
+                el.classList.remove('bg-white');
+                el.classList.add('bg-black');
+            });
+            
+            document.querySelectorAll('.shadow').forEach(el => {
+                el.style.backgroundColor = '#121212';
+            });
+            
+            // 边框颜色
+            document.querySelectorAll('.border-gray-200, .border-gray-300').forEach(el => {
+                el.classList.remove('border-gray-200', 'border-gray-300');
+                el.classList.add('border-gray-700');
+            });
+            
+            // 调整输入框和选择框
+            document.querySelectorAll('input, select').forEach(el => {
+                el.classList.add('bg-gray-900', 'text-gray-100', 'border-gray-700');
+                el.classList.remove('bg-white', 'bg-gray-50', 'text-gray-700');
+            });
+            
+            // 调整主题预览
+            document.querySelector('.dark-preview').querySelector('div:first-child').style.backgroundColor = '#000000';
+            document.querySelector('.dark-preview').querySelector('div:last-child').style.backgroundColor = '#121212';
+            document.querySelectorAll('.dark-preview .bg-gray-700').forEach(el => {
+                el.style.backgroundColor = '#333333';
+            });
+            document.querySelectorAll('.dark-preview .bg-gray-800').forEach(el => {
+                el.style.backgroundColor = '#1c1c1c';
+            });
+            
+            // 紫罗兰色边框
+            document.querySelectorAll('.border-indigo-500').forEach(el => {
+                el.classList.remove('border-indigo-500');
+                el.classList.add('border-violet-500');
+            });
+            
+            // 紫罗兰色主题按钮
+            document.querySelectorAll('.bg-indigo-600').forEach(el => {
+                el.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                el.classList.add('bg-violet-600', 'hover:bg-violet-700');
+            });
+        } else if (theme === 'light') {
+            // 明亮模式特定调整
+            document.querySelectorAll('.bg-gray-800').forEach(el => {
+                el.classList.remove('bg-gray-800');
+                el.classList.add('bg-gray-100');
+            });
+        } else if (theme === 'light_micro') {
+            // 明亮微观模式特定调整
+            document.querySelectorAll('.bg-gray-800').forEach(el => {
+                el.classList.remove('bg-gray-800');
+                el.classList.add('bg-gray-100');
+            });
+            
+            // 调整按钮颜色为蓝色
+            document.querySelectorAll('.bg-indigo-600').forEach(el => {
+                el.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                el.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            });
+            
+            // 调整边框高亮颜色
+            document.querySelectorAll('.border-indigo-500').forEach(el => {
+                el.classList.remove('border-indigo-500');
+                el.classList.add('border-blue-500');
+            });
+        } else if (theme === 'dark_micro') {
+            // 黑暗微观模式特定调整 - 类似黑暗模式但颜色不同
+            document.querySelectorAll('.bg-gray-100').forEach(el => {
+                el.classList.remove('bg-gray-100');
+                el.classList.add('bg-gray-800');
+            });
+            
+            document.querySelectorAll('.text-gray-900').forEach(el => {
+                el.classList.remove('text-gray-900');
+                el.classList.add('text-gray-100');
+            });
+            
+            document.querySelectorAll('.text-gray-700').forEach(el => {
+                el.classList.remove('text-gray-700');
+                el.classList.add('text-gray-300');
+            });
+            
+            document.querySelectorAll('.text-gray-500').forEach(el => {
+                el.classList.remove('text-gray-500');
+                el.classList.add('text-gray-400');
+            });
+            
+            // 背景调整 - 使用深蓝黑色而不是纯黑
+            document.querySelectorAll('.bg-gray-50').forEach(el => {
+                el.classList.remove('bg-gray-50');
+                el.classList.add('bg-gray-900');
+            });
+            
+            document.querySelectorAll('.bg-white').forEach(el => {
+                el.classList.remove('bg-white');
+                el.classList.add('bg-gray-900');
+            });
+            
+            // 调整按钮颜色为蓝色
+            document.querySelectorAll('.bg-indigo-600').forEach(el => {
+                el.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                el.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            });
+            
+            // 调整边框高亮颜色
+            document.querySelectorAll('.border-indigo-500').forEach(el => {
+                el.classList.remove('border-indigo-500');
+                el.classList.add('border-blue-500');
+            });
+        }
+        
+        console.log(`主题已更改为: ${theme}`);
+    }
+    
+    // 获取当前主题
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    
+    // 如果是黑暗模式，调整元素颜色
+    if (currentTheme === 'dark') {
+        // 替换文本颜色类
+        document.querySelectorAll('.text-gray-900').forEach(el => {
+            el.classList.remove('text-gray-900');
+            el.classList.add('text-gray-100');
+        });
+        
+        document.querySelectorAll('.text-gray-700').forEach(el => {
+            el.classList.remove('text-gray-700');
+            el.classList.add('text-gray-300');
+        });
+        
+        document.querySelectorAll('.text-gray-500').forEach(el => {
+            el.classList.remove('text-gray-500');
+            el.classList.add('text-gray-400');
+        });
+        
+        // 背景调整
+        document.querySelectorAll('.bg-gray-50').forEach(el => {
+            el.classList.remove('bg-gray-50');
+            el.classList.add('bg-black');
+        });
+        
+        document.querySelectorAll('.bg-white').forEach(el => {
+            el.classList.remove('bg-white');
+            el.classList.add('bg-black');
+        });
+        
+        document.querySelectorAll('.shadow').forEach(el => {
+            el.style.backgroundColor = '#121212';
+        });
+        
+        // 边框颜色
+        document.querySelectorAll('.border-gray-200, .border-gray-300').forEach(el => {
+            el.classList.remove('border-gray-200', 'border-gray-300');
+            el.classList.add('border-gray-700');
+        });
+        
+        // 调整输入框和选择框
+        document.querySelectorAll('input, select').forEach(el => {
+            el.classList.add('bg-gray-900', 'text-gray-100', 'border-gray-700');
+            el.classList.remove('bg-white', 'bg-gray-50', 'text-gray-700');
+        });
+        
+        // 调整主题预览
+        document.querySelector('.dark-preview').querySelector('div:first-child').style.backgroundColor = '#000000';
+        document.querySelector('.dark-preview').querySelector('div:last-child').style.backgroundColor = '#121212';
+        document.querySelectorAll('.dark-preview .bg-gray-700').forEach(el => {
+            el.style.backgroundColor = '#333333';
+        });
+        document.querySelectorAll('.dark-preview .bg-gray-800').forEach(el => {
+            el.style.backgroundColor = '#1c1c1c';
+        });
+        
+        // 紫罗兰色边框
+        document.querySelectorAll('.border-indigo-500').forEach(el => {
+            el.classList.remove('border-indigo-500');
+            el.classList.add('border-violet-500');
+        });
+        
+        // 紫罗兰色主题按钮
+        document.querySelectorAll('.bg-indigo-600').forEach(el => {
+            el.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            el.classList.add('bg-violet-600', 'hover:bg-violet-700');
+        });
+    }
+    
+    // 监听主题选择变化并实时应用
+    document.querySelectorAll('input[name="theme"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                // 应用选中的主题
+                window.applyTheme(this.value);
+                
+                // 更新主题样式预览的边框
+                document.querySelectorAll('.theme-preview').forEach(preview => {
+                    preview.classList.remove('border-indigo-500');
+                    preview.classList.add('border-gray-200');
+                });
+                
+                // 为当前选中的主题设置高亮边框
+                const selectedPreview = document.querySelector(`.${this.value}-preview`);
+                if (selectedPreview) {
+                    selectedPreview.classList.remove('border-gray-200');
+                    selectedPreview.classList.add('border-indigo-500');
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

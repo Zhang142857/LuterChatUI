@@ -1,0 +1,121 @@
+/* 登录和注册页面样式 */
+
+/* 明亮微观模式 */
+html[data-theme="light_micro"] a.text-indigo-600 {
+    color: #3b82f6 !important;
+}
+
+html[data-theme="light_micro"] a.hover\:text-indigo-500:hover {
+    color: #2563eb !important;
+}
+
+html[data-theme="light_micro"] button.bg-indigo-600 {
+    background-color: #3b82f6 !important;
+}
+
+html[data-theme="light_micro"] button.hover\:bg-indigo-700:hover {
+    background-color: #2563eb !important;
+}
+
+html[data-theme="light_micro"] button .text-indigo-500 {
+    color: #60a5fa !important;
+}
+
+html[data-theme="light_micro"] button .group-hover\:text-indigo-400:group-hover {
+    color: #93c5fd !important;
+}
+
+html[data-theme="light_micro"] .focus\:ring-indigo-500:focus {
+    --tw-ring-color: rgba(59, 130, 246, 0.5) !important;
+}
+
+html[data-theme="light_micro"] .focus\:border-indigo-500:focus {
+    border-color: #3b82f6 !important;
+}
+
+html[data-theme="light_micro"] .text-gray-900 {
+    color: var(--text-color) !important;
+}
+
+html[data-theme="light_micro"] .text-gray-600 {
+    color: var(--secondary-text-color) !important;
+}
+
+html[data-theme="light_micro"] .min-h-screen {
+    background-color: var(--bg-color) !important;
+}
+
+/* 黑暗微观模式 */
+html[data-theme="dark_micro"] a.text-indigo-600 {
+    color: #3b82f6 !important;
+}
+
+html[data-theme="dark_micro"] a.hover\:text-indigo-500:hover {
+    color: #60a5fa !important;
+}
+
+html[data-theme="dark_micro"] button.bg-indigo-600 {
+    background-color: #3b82f6 !important;
+}
+
+html[data-theme="dark_micro"] button.hover\:bg-indigo-700:hover {
+    background-color: #2563eb !important;
+}
+
+html[data-theme="dark_micro"] button .text-indigo-500 {
+    color: #60a5fa !important;
+}
+
+html[data-theme="dark_micro"] button .group-hover\:text-indigo-400:group-hover {
+    color: #93c5fd !important;
+}
+
+html[data-theme="dark_micro"] .focus\:ring-indigo-500:focus {
+    --tw-ring-color: rgba(59, 130, 246, 0.5) !important;
+}
+
+html[data-theme="dark_micro"] .focus\:border-indigo-500:focus {
+    border-color: #3b82f6 !important;
+}
+
+html[data-theme="dark_micro"] input {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+html[data-theme="dark_micro"] input::placeholder {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark_micro"] .text-gray-900 {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark_micro"] .text-gray-600 {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark_micro"] .border-gray-300 {
+    border-color: #334155 !important;
+}
+
+html[data-theme="dark_micro"] .placeholder-gray-500::placeholder {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark_micro"] .text-gray-900 {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark_micro"] .min-h-screen {
+    background-color: var(--bg-color) !important;
+}
+
+/* 登录卡片样式 */
+html[data-theme="dark_micro"] .max-w-md {
+    background-color: #1e293b;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+} 

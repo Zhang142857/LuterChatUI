@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="{{ user.theme if user is defined and user and hasattr(user, 'theme') else 'colorful' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}luterUI{% endblock %}</title>
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <!-- Markdown 解析和语法高亮 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <!-- 自定义CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+    
+    <style>
+        :root {
+            /* 默认彩色模式变量 */
+            --primary-color: #6366f1;
+            --primary-hover-color: #4f46e5;
+            --secondary-color: #e5e7eb;
+            --bg-color: #f9fafb;
+            --content-bg-color: #ffffff;
+            --text-color: #111827;
+            --secondary-text-color: #4b5563;
+            --border-color: #e5e7eb;
+            --highlight-bg: #f3f4f6;
+            --sidebar-bg: #1a1a1a;
+            --sidebar-text: #ffffff;
+            --user-msg-bg: #6366f1;
+            --user-msg-color: #ffffff;
+            --assistant-msg-bg: #ffffff;
+            --assistant-msg-color: #111827;
+        }
+        
+        /* 明亮模式 */
+        html[data-theme="light"] {
+            --primary-color: #4b5563;
+            --primary-hover-color: #374151;
+            --secondary-color: #e5e7eb;
+            --bg-color: #ffffff;
+            --content-bg-color: #f9fafb;
+            --text-color: #111827;
+            --secondary-text-color: #4b5563;
+            --border-color: #e5e7eb;
+            --highlight-bg: #f3f4f6;
+            --sidebar-bg: #f3f4f6;
+            --sidebar-text: #111827;
+            --user-msg-bg: #f3f4f6;
+            --user-msg-color: #111827;
+            --assistant-msg-bg: #ffffff;
+            --assistant-msg-color: #111827;
+        }
+        
+        /* 黑暗模式 */
+        html[data-theme="dark"] {
+            --primary-color: #8b5cf6;  /* 紫罗兰色主色调 */
+            --primary-hover-color: #7c3aed;
+            --secondary-color: #333333;
+            --bg-color: #000000;  /* 纯黑色背景 */
+            --content-bg-color: #121212;  /* 稍浅的黑色内容背景 */
+            --text-color: #f8fafc;  /* 高对比度文本 */
+            --secondary-text-color: #a1a1aa;  /* 次要文本 */
+            --border-color: #333333;  /* 深色边框 */
+            --highlight-bg: #1c1c1c;  /* 高亮背景 */
+            --sidebar-bg: #000000;  /* 纯黑色侧边栏 */
+            --sidebar-text: #f8fafc;  /* 侧边栏文本 */
+            --user-msg-bg: #8b5cf6;  /* 紫罗兰色用户消息背景 */
+            --user-msg-color: #ffffff;  /* 用户消息文本 */
+            --assistant-msg-bg: #1c1c1c;  /* 深色助手消息背景 */
+            --assistant-msg-color: #f8fafc;  /* 助手消息文本 */
+        }
+        
+        /* 明亮微观模式 */
+        html[data-theme="light_micro"] {
+            --primary-color: #3b82f6;  /* 蓝色主色调 */
+            --primary-hover-color: #2563eb;
+            --secondary-color: #e5e7eb;
+            --bg-color: #ffffff;  /* 纯白色背景 */
+            --content-bg-color: #f9fafb;  /* 浅灰色内容背景 */
+            --text-color: #111827;  /* 深色文本 */
+            --secondary-text-color: #6b7280;  /* 次要文本 */
+            --border-color: #d1d5db;  /* 浅灰色边框 */
+            --highlight-bg: #eff6ff;  /* 浅蓝色高亮背景 */
+            --sidebar-bg: #ffffff;  /* 白色侧边栏 */
+            --sidebar-text: #111827;  /* 侧边栏文本 */
+            --user-msg-bg: #eff6ff;  /* 浅蓝色用户消息背景 */
+            --user-msg-color: #1e40af;  /* 蓝色用户消息文本 */
+            --assistant-msg-bg: #ffffff;  /* 白色助手消息背景 */
+            --assistant-msg-color: #111827;  /* 深色助手消息文本 */
+        }
+        
+        /* 黑暗微观模式 */
+        html[data-theme="dark_micro"] {
+            --primary-color: #3b82f6;  /* 蓝色主色调 */
+            --primary-hover-color: #2563eb;
+            --secondary-color: #333333;
+            --bg-color: #0f172a;  /* 深蓝黑色背景 */
+            --content-bg-color: #1e293b;  /* 稍浅的蓝黑色内容背景 */
+            --text-color: #f8fafc;  /* 高对比度文本 */
+            --secondary-text-color: #94a3b8;  /* 次要文本 */
+            --border-color: #334155;  /* 深色边框 */
+            --highlight-bg: #1e293b;  /* 高亮背景 */
+            --sidebar-bg: #0f172a;  /* 深色侧边栏 */
+            --sidebar-text: #f8fafc;  /* 侧边栏文本 */
+            --user-msg-bg: #1e40af;  /* 深蓝色用户消息背景 */
+            --user-msg-color: #f8fafc;  /* 用户消息文本 */
+            --assistant-msg-bg: #1e293b;  /* 深色助手消息背景 */
+            --assistant-msg-color: #f8fafc;  /* 助手消息文本 */
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        
+        .bg-white {
+            background-color: var(--content-bg-color) !important;
+        }
+        
+        .text-gray-700 {
+            color: var(--text-color) !important;
+        }
+        
+        .text-gray-500 {
+            color: var(--secondary-text-color) !important;
+        }
+        
+        .border-gray-200 {
+            border-color: var(--border-color) !important;
+        }
+        
+        /* 黑暗模式通知样式 */
+        .dark-notification {
+            background-color: #121212 !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4) !important;
+            border-color: #333333 !important;
+        }
+        
+        .dark-notification p {
+            color: var(--text-color) !important;
+        }
+        
+        /* 黑暗模式主题预览 - 用于设置页面 */
+        html[data-theme="dark"] .dark-preview {
+            border-color: #8b5cf6 !important;
+        }
+        
+        html[data-theme="dark"] .dark-preview > div:first-child {
+            background-color: #000000 !important;
+        }
+        
+        html[data-theme="dark"] .dark-preview > div:last-child {
+            background-color: #121212 !important;
+        }
+        
+        html[data-theme="dark"] .dark-preview .bg-gray-700 {
+            background-color: #333333 !important;
+        }
+        
+        html[data-theme="dark"] .dark-preview .bg-gray-800 {
+            background-color: #1c1c1c !important;
+        }
+        
+        /* 黑暗模式下按钮和UI元素样式 */
+        html[data-theme="dark"] button,
+        html[data-theme="dark"] .button,
+        html[data-theme="dark"] input,
+        html[data-theme="dark"] select,
+        html[data-theme="dark"] textarea {
+            background-color: #1c1c1c !important;
+            border-color: #333333 !important;
+            color: var(--text-color) !important;
+        }
+        
+        html[data-theme="dark"] button:hover,
+        html[data-theme="dark"] .button:hover {
+            background-color: #2d2d2d !important;
+        }
+        
+        html[data-theme="dark"] .shadow-md,
+        html[data-theme="dark"] .shadow-lg,
+        html[data-theme="dark"] .shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.36) !important;
+        }
+        
+        html[data-theme="dark"] .border,
+        html[data-theme="dark"] .border-t,
+        html[data-theme="dark"] .border-b,
+        html[data-theme="dark"] .border-l,
+        html[data-theme="dark"] .border-r {
+            border-color: #333333 !important;
+        }
+        
+        /* 黑暗模式下滚动条样式 */
+        html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+            background-color: #333333;
+        }
+        
+        html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+            background-color: #444444;
+        }
+        
+        /* 黑暗模式下代码块 */
+        html[data-theme="dark"] pre {
+            background-color: #121212 !important;
+            border-color: #333333 !important;
+        }
+        
+        html[data-theme="dark"] code {
+            color: #c084fc !important; /* 淡紫色代码 */
+        }
+        
+        /* 登录和聊天页面背景 */
+        html[data-theme="dark"] .min-h-screen {
+            background-color: var(--bg-color) !important;
+        }
+        
+        html[data-theme="dark"] .max-w-md {
+            color: var(--text-color) !important;
+        }
+        
+        html[data-theme="dark"] .bg-white {
+            background-color: var(--content-bg-color) !important;
+        }
+        
+        html[data-theme="dark"] .bg-gray-100 {
+            background-color: var(--bg-color) !important;
+        }
+        
+        /* 登录页面表单元素 */
+        html[data-theme="dark"] input[type="text"],
+        html[data-theme="dark"] input[type="password"] {
+            background-color: var(--content-bg-color) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        html[data-theme="dark"] .text-gray-900 {
+            color: var(--text-color) !important;
+        }
+        
+        html[data-theme="dark"] .text-gray-600 {
+            color: var(--secondary-text-color) !important;
+        }
+        
+        html[data-theme="dark"] .placeholder-gray-500::placeholder {
+            color: var(--secondary-text-color) !important;
+        }
+    </style>
+    
+    <!-- 主题处理 -->
+    <script>
+        // 初始化时应用当前主题
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'colorful';
+        
+        // 应用主题函数
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            // 存储主题到本地存储
+            localStorage.setItem('theme', theme);
+            
+            console.log('应用主题:', theme);
+        }
+        
+        // 将applyTheme添加到window对象，使其全局可访问
+        window.applyTheme = applyTheme;
+        
+        // 立即应用当前主题
+        applyTheme(currentTheme);
+        
+        // 页面加载后处理其他样式
+        document.addEventListener('DOMContentLoaded', function() {
+            // 额外处理主题特定的UI调整
+            const theme = document.documentElement.getAttribute('data-theme');
+            if (theme === 'dark') {
+                // 黑暗模式特定调整
+                document.querySelectorAll('.bg-gray-100').forEach(el => {
+                    el.classList.remove('bg-gray-100');
+                    el.classList.add('bg-black');
+                });
+                
+                // 处理所有白色背景元素
+                document.querySelectorAll('.bg-white').forEach(el => {
+                    el.classList.remove('bg-white');
+                    el.classList.add('bg-black');
+                });
+                
+                // 处理浅灰色背景元素
+                document.querySelectorAll('.bg-gray-50, .bg-gray-200').forEach(el => {
+                    el.classList.remove('bg-gray-50', 'bg-gray-200');
+                    el.classList.add('bg-gray-900');
+                });
+                
+                // 处理login和register页面
+                const minHScreen = document.querySelector('.min-h-screen');
+                if (minHScreen) {
+                    minHScreen.style.backgroundColor = 'var(--bg-color)';
+                }
+                
+                // 处理表单元素
+                document.querySelectorAll('input[type="text"], input[type="password"]').forEach(el => {
+                    el.style.backgroundColor = 'var(--content-bg-color)';
+                    el.style.borderColor = 'var(--border-color)';
+                    el.style.color = 'var(--text-color)';
+                });
+                
+                // 调整通知区域在黑暗模式下的样式
+                document.querySelectorAll('.notification').forEach(el => {
+                    el.classList.add('dark-notification');
+                    el.style.backgroundColor = '#121212';
+                    el.querySelectorAll('button').forEach(btn => {
+                        btn.classList.remove('bg-white');
+                        btn.classList.add('bg-black');
+                        btn.classList.remove('text-gray-400');
+                        btn.classList.add('text-gray-300');
+                        btn.classList.remove('hover:text-gray-500');
+                        btn.classList.add('hover:text-gray-100');
+                    });
+                });
+                
+                // 调整所有卡片和面板
+                document.querySelectorAll('.card, .panel').forEach(el => {
+                    el.style.backgroundColor = '#121212';
+                    el.style.borderColor = '#333333';
+                });
+                
+                // 处理聊天气泡样式
+                document.querySelectorAll('.assistant .message-content').forEach(el => {
+                    el.style.backgroundColor = '#1c1c1c';
+                });
+                
+                // 处理按钮样式
+                document.querySelectorAll('button.bg-indigo-600').forEach(el => {
+                    el.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                    el.classList.add('bg-violet-600', 'hover:bg-violet-700');
+                });
+            } else if (theme === 'light') {
+                // 明亮模式特定调整
+                document.querySelectorAll('.bg-black, .bg-gray-800, .bg-gray-900, .bg-blue-900').forEach(el => {
+                    el.classList.remove('bg-black', 'bg-gray-800', 'bg-gray-900', 'bg-blue-900');
+                    el.classList.add('bg-gray-100');
+                });
+                
+                // 恢复通知区域在明亮模式下的默认样式
+                document.querySelectorAll('.notification').forEach(el => {
+                    el.classList.remove('dark-notification');
+                    el.style.backgroundColor = '';
+                    el.querySelectorAll('button').forEach(btn => {
+                        btn.classList.add('bg-white');
+                        btn.classList.remove('bg-black');
+                        btn.classList.add('text-gray-400');
+                        btn.classList.remove('text-gray-300');
+                        btn.classList.add('hover:text-gray-500');
+                        btn.classList.remove('hover:text-gray-100');
+                    });
+                });
+                
+                // 恢复卡片和面板
+                document.querySelectorAll('.card, .panel').forEach(el => {
+                    el.style.backgroundColor = '';
+                    el.style.borderColor = '';
+                });
+                
+                // 恢复按钮样式
+                document.querySelectorAll('button.bg-violet-600').forEach(el => {
+                    el.classList.remove('bg-violet-600', 'hover:bg-violet-700');
+                    el.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                });
+            } else if (theme === 'light_micro') {
+                // 明亮微观模式调整
+                document.querySelectorAll('.bg-black, .bg-gray-800, .bg-gray-900, .bg-blue-900').forEach(el => {
+                    el.classList.remove('bg-black', 'bg-gray-800', 'bg-gray-900', 'bg-blue-900');
+                    el.classList.add('bg-white');
+                });
+                
+                // 处理login和register页面
+                const minHScreen = document.querySelector('.min-h-screen');
+                if (minHScreen) {
+                    minHScreen.style.backgroundColor = 'var(--bg-color)';
+                }
+                
+                // 处理表单元素 - 明亮微观风格
+                document.querySelectorAll('input[type="text"], input[type="password"]').forEach(el => {
+                    el.style.backgroundColor = 'var(--content-bg-color)';
+                    el.style.borderColor = 'var(--border-color)';
+                    el.style.color = 'var(--text-color)';
+                });
+                
+                // 调整通知区域样式
+                document.querySelectorAll('.notification').forEach(el => {
+                    el.classList.remove('dark-notification');
+                    el.style.backgroundColor = '#ffffff';
+                    el.querySelectorAll('button').forEach(btn => {
+                        btn.classList.add('bg-white');
+                        btn.classList.remove('bg-black');
+                        btn.classList.add('text-gray-400');
+                        btn.classList.remove('text-gray-300');
+                        btn.classList.add('hover:text-gray-500');
+                        btn.classList.remove('hover:text-gray-100');
+                    });
+                });
+                
+                // 调整所有卡片和面板
+                document.querySelectorAll('.card, .panel').forEach(el => {
+                    el.style.backgroundColor = '#ffffff';
+                    el.style.borderColor = '#d1d5db';
+                });
+                
+                // 处理聊天气泡样式
+                document.querySelectorAll('.assistant .message-content').forEach(el => {
+                    el.style.backgroundColor = '#ffffff';
+                });
+                
+                document.querySelectorAll('.user .message-content').forEach(el => {
+                    el.style.backgroundColor = '#eff6ff';
+                    el.style.color = '#1e40af';
+                });
+                
+                // 处理按钮样式
+                document.querySelectorAll('button.bg-indigo-600, button.bg-violet-600').forEach(el => {
+                    el.classList.remove('bg-indigo-600', 'bg-violet-600', 'hover:bg-indigo-700', 'hover:bg-violet-700');
+                    el.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                });
+                
+                // 处理链接样式
+                document.querySelectorAll('a.text-indigo-600').forEach(el => {
+                    el.classList.remove('text-indigo-600', 'hover:text-indigo-500');
+                    el.classList.add('text-blue-600', 'hover:text-blue-500');
+                });
+                
+                // 处理聊天界面侧边栏
+                document.querySelectorAll('.sidebar').forEach(el => {
+                    el.style.backgroundColor = 'var(--sidebar-bg)';
+                    el.style.color = 'var(--sidebar-text)';
+                });
+            } else if (theme === 'dark_micro') {
+                // 黑暗微观模式调整
+                document.querySelectorAll('.bg-gray-100, .bg-white').forEach(el => {
+                    el.classList.remove('bg-gray-100', 'bg-white');
+                    el.classList.add('bg-gray-900');
+                });
+                
+                // 处理login和register页面
+                const minHScreen = document.querySelector('.min-h-screen');
+                if (minHScreen) {
+                    minHScreen.style.backgroundColor = 'var(--bg-color)';
+                }
+                
+                // 处理表单元素 - 黑暗微观风格
+                document.querySelectorAll('input[type="text"], input[type="password"]').forEach(el => {
+                    el.style.backgroundColor = 'var(--content-bg-color)';
+                    el.style.borderColor = 'var(--border-color)';
+                    el.style.color = 'var(--text-color)';
+                });
+                
+                // 调整通知区域在黑暗微观模式下的样式
+                document.querySelectorAll('.notification').forEach(el => {
+                    el.classList.add('dark-notification');
+                    el.style.backgroundColor = '#1e293b';
+                    el.querySelectorAll('button').forEach(btn => {
+                        btn.classList.remove('bg-white');
+                        btn.classList.add('bg-gray-900');
+                        btn.classList.remove('text-gray-400');
+                        btn.classList.add('text-gray-300');
+                        btn.classList.remove('hover:text-gray-500');
+                        btn.classList.add('hover:text-gray-100');
+                    });
+                });
+                
+                // 调整所有卡片和面板
+                document.querySelectorAll('.card, .panel').forEach(el => {
+                    el.style.backgroundColor = '#1e293b';
+                    el.style.borderColor = '#334155';
+                });
+                
+                // 处理聊天气泡样式
+                document.querySelectorAll('.assistant .message-content').forEach(el => {
+                    el.style.backgroundColor = '#1e293b';
+                });
+                
+                document.querySelectorAll('.user .message-content').forEach(el => {
+                    el.style.backgroundColor = '#1e40af';
+                    el.style.color = '#f8fafc';
+                });
+                
+                // 处理按钮样式
+                document.querySelectorAll('button.bg-indigo-600, button.bg-violet-600').forEach(el => {
+                    el.classList.remove('bg-indigo-600', 'bg-violet-600', 'hover:bg-indigo-700', 'hover:bg-violet-700');
+                    el.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                });
+                
+                // 处理链接样式
+                document.querySelectorAll('a.text-indigo-600').forEach(el => {
+                    el.classList.remove('text-indigo-600', 'hover:text-indigo-500');
+                    el.classList.add('text-blue-600', 'hover:text-blue-500');
+                });
+                
+                // 处理聊天界面侧边栏
+                document.querySelectorAll('.sidebar').forEach(el => {
+                    el.style.backgroundColor = 'var(--sidebar-bg)';
+                    el.style.color = 'var(--sidebar-text)';
+                });
+                
+                // 处理文本颜色
+                document.querySelectorAll('.text-gray-900').forEach(el => {
+                    el.classList.remove('text-gray-900');
+                    el.classList.add('text-gray-100');
+                });
+                
+                document.querySelectorAll('.text-gray-700').forEach(el => {
+                    el.classList.remove('text-gray-700');
+                    el.classList.add('text-gray-300');
+                });
+                
+                document.querySelectorAll('.text-gray-500').forEach(el => {
+                    el.classList.remove('text-gray-500');
+                    el.classList.add('text-gray-400');
+                });
+            }
+        });
+    </script>
+</head>
+<body class="h-screen flex flex-col">
+    <div class="flex-1 flex flex-col overflow-hidden">
+        {% block content %}{% endblock %}
+    </div>
+    
+    <!-- 通知区域 -->
+    <div id="notification-area" class="fixed top-4 right-4 z-50">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="notification bg-white border-l-4 border-{{ category if category != 'message' else 'blue' }}-500 p-4 mb-4 shadow-md rounded-md">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle text-{{ category if category != 'message' else 'blue' }}-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-700">{{ message }}</p>
+                            </div>
+                            <div class="ml-auto pl-3">
+                                <div class="-mx-1.5 -my-1.5">
+                                    <button class="close-notification inline-flex bg-white rounded-md p-1.5 text-gray-400 hover:text-gray-500 focus:outline-none">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

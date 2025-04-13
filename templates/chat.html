@@ -1,0 +1,1122 @@
+{% extends "base.html" %}
+
+{% block title %}对话 - luterUI{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/github.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown.min.css">
+<!-- 添加MathJax支持 -->
+<script>
+    // MathJax配置
+    window.MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true,
+            processEnvironments: true,
+            tags: 'ams'
+        },
+        options: {
+            enableMenu: false, // 禁用右键菜单
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            ignoreHtmlClass: 'tex2jax_ignore',
+            processHtmlClass: 'tex2jax_process'
+        },
+        svg: {
+            fontCache: 'global'
+        },
+        startup: {
+            typeset: true,
+            ready: function() {
+                MathJax.startup.defaultReady();
+                console.log('MathJax准备完成');
+                // 当MathJax完全加载和准备好后触发事件
+                document.dispatchEvent(new Event('MathJaxReady'));
+            }
+        }
+    };
+
+    // 增加自定义处理函数，在MathJax处理页面前预处理内容
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof MathJax !== 'undefined') {
+            // 保存原始的typesetPromise方法
+            const originalTypesetPromise = MathJax.typesetPromise;
+            
+            // 重写typesetPromise方法
+            MathJax.typesetPromise = function(elements) {
+                // 在处理前，先查找并处理包含斜杠的括号
+                if (elements && elements.length) {
+                    elements.forEach(function(element) {
+                        // 查找所有文本节点
+                        const textNodes = [];
+                        const walker = document.createTreeWalker(
+                            element,
+                            NodeFilter.SHOW_TEXT,
+                            { acceptNode: function(node) { return NodeFilter.FILTER_ACCEPT; } },
+                            false
+                        );
+                        
+                        let node;
+                        while (node = walker.nextNode()) {
+                            textNodes.push(node);
+                        }
+                        
+                        // 处理文本节点
+                        textNodes.forEach(function(textNode) {
+                            const parentNode = textNode.parentNode;
+                            // 跳过已经在数学环境中的节点
+                            if (parentNode.nodeName === 'SCRIPT' || 
+                                parentNode.classList && 
+                                (parentNode.classList.contains('math') || 
+                                 parentNode.classList.contains('MathJax'))) {
+                                return;
+                            }
+                            
+                            const text = textNode.nodeValue;
+                            // 查找圆括号或方括号中包含斜杠的内容
+                            if ((text.match(/\([^)]*\/[^)]*\)/) || text.match(/\[[^\]]*\/[^\]]*\]/)) && 
+                                !parentNode.closest('pre') && !parentNode.closest('code')) {
+                                // 将文本内容包裹在数学标记中
+                                const wrapper = document.createElement('span');
+                                wrapper.innerHTML = text
+                                    .replace(/(\([^)]*\/[^)]*\))/g, '$$$1$$')
+                                    .replace(/(\[[^\]]*\/[^\]]*\])/g, '$$$1$$');
+                                
+                                // 替换原文本节点
+                                parentNode.replaceChild(wrapper, textNode);
+                            }
+                        });
+                    });
+                }
+                
+                // 调用原始方法
+                return originalTypesetPromise.apply(this, arguments);
+            };
+        }
+    });
+</script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+    // 确保MathJax加载超时后也能触发事件
+    document.addEventListener('DOMContentLoaded', function() {
+        // 等待3秒后，如果MathJax还没加载完成，手动触发事件
+        setTimeout(function() {
+            if (typeof MathJax === 'undefined' || !MathJax.startup || !MathJax.startup.defaultReady) {
+                console.warn('MathJax加载超时，尝试重新加载');
+                document.dispatchEvent(new Event('MathJaxReady'));
+                
+                // 尝试重新加载MathJax
+                var script = document.createElement('script');
+                script.id = 'MathJax-script-fallback';
+                script.type = 'text/javascript';
+                script.async = true;
+                script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+                document.head.appendChild(script);
+            }
+        }, 3000);
+    });
+</script>
+<style>
+    /* 主界面布局 */
+    .app-container {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    /* 侧边栏样式 */
+    .sidebar {
+        width: 280px;
+        background-color: var(--sidebar-bg);
+        color: var(--sidebar-text);
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 10;
+    }
+    
+    .sidebar-collapsed {
+        width: 0;
+    }
+    
+    .sidebar-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* 新增: 模型选择区域样式 */
+    .model-selector-wrapper {
+        width: 100%;
+        position: relative;
+    }
+
+    .model-select-button {
+        width: 100%;
+        padding: 12px 14px;
+        background-color: rgba(0, 0, 0, 0.2);
+        color: var(--sidebar-text);
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+    }
+
+    .model-select-button:hover {
+        background-color: rgba(0, 0, 0, 0.3);
+    }
+
+    .model-select-button i {
+        font-size: 16px;
+        transition: transform 0.2s ease;
+    }
+
+    .model-select-button.active i {
+        transform: rotate(180deg);
+    }
+
+    .model-dropdown {
+        position: absolute;
+        width: 100%;
+        max-height: 0;
+        overflow: hidden;
+        background-color: #2d2d2d;
+        border-radius: 8px;
+        z-index: 100;
+        margin-top: 4px;
+        transition: max-height 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .model-dropdown.active {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .model-dropdown-content {
+        display: flex;
+    }
+
+    .vendor-list {
+        width: 40%;
+        border-right: 1px solid #3a3a3a;
+    }
+
+    .model-list {
+        width: 60%;
+    }
+
+    .vendor-item, .model-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .vendor-item:hover, .model-item:hover {
+        background-color: #3a3a3a;
+    }
+
+    .vendor-item.active {
+        background-color: #3a3a3a;
+        border-left: 3px solid #6366f1;
+        font-weight: 500;
+    }
+
+    .current-model-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+        border-radius: 4px;
+    }
+    
+    .sidebar-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px;
+    }
+    
+    .sidebar-footer {
+        padding: 12px 16px;
+        border-top: 1px solid #2d2d2d;
+    }
+    
+    /* 对话列表项样式 */
+    .conversation-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 8px;
+        margin-bottom: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .conversation-item:hover {
+        background-color: #2d2d2d;
+    }
+    
+    .conversation-item.active {
+        background-color: #3a3a3a;
+    }
+    
+    .conversation-title {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-left: 8px;
+        font-size: 14px;
+    }
+    
+    /* 主聊天区域 */
+    .chat-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    .chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background-color: var(--content-bg-color);
+        border-bottom: 1px solid var(--border-color);
+        z-index: 5;
+    }
+    
+    .chat-title-area {
+        display: flex;
+        align-items: center;
+    }
+    
+    .toggle-sidebar {
+        margin-right: 16px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+    }
+    
+    .toggle-sidebar:hover {
+        background-color: var(--highlight-bg);
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 16px;
+        background-color: var(--bg-color);
+    }
+    
+    /* 新对话和已有对话输入框样式 */
+    .chat-input-container {
+        padding: 16px;
+        background-color: var(--content-bg-color);
+        border-top: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+    
+    /* 新对话输入框居中样式 */
+    .chat-input-container.new-conversation {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 50%;
+        max-width: 600px;
+        border: none;
+        background-color: transparent;
+        padding: 0;
+        z-index: 10;
+    }
+    
+    .chat-input-wrapper {
+        position: relative;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background-color: var(--content-bg-color);
+        transition: all 0.2s;
+    }
+    
+    /* 新对话输入框样式增强 */
+    .new-conversation .chat-input-wrapper {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 16px;
+    }
+    
+    .chat-input-wrapper:focus-within {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+    
+    /* 新对话状态下输入框样式增强 */
+    .new-conversation .chat-input-wrapper:focus-within {
+        box-shadow: 0 6px 16px rgba(99, 102, 241, 0.15);
+    }
+    
+    .chat-input {
+        width: 100%;
+        border: none;
+        padding: 12px 16px;
+        font-size: 15px;
+        resize: none;
+        border-radius: 8px;
+        background-color: transparent;
+        max-height: 200px;
+        color: var(--text-color);
+    }
+    
+    /* 新对话输入框圆角 */
+    .new-conversation .chat-input {
+        border-radius: 16px;
+    }
+    
+    .chat-input:focus {
+        outline: none;
+    }
+    
+    .send-button {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .send-button:hover {
+        background-color: var(--primary-hover-color);
+    }
+    
+    /* 消息气泡样式 */
+    .message-container {
+        display: flex;
+        margin-bottom: 24px;
+    }
+    
+    .message-container.user {
+        justify-content: flex-end;
+    }
+    
+    .message-content {
+        max-width: 85%;
+        border-radius: 12px;
+        padding: 12px 16px;
+        position: relative;
+    }
+    
+    .user .message-content {
+        background-color: var(--user-msg-bg);
+        color: var(--user-msg-color);
+        border-top-right-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .assistant .message-content {
+        background-color: var(--assistant-msg-bg);
+        color: var(--assistant-msg-color);
+        border-top-left-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        font-size: 13px;
+    }
+    
+    .user .message-header {
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .assistant .message-header {
+        color: var(--secondary-text-color);
+    }
+    
+    .message-actions {
+        display: flex;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    
+    .message-content:hover .message-actions {
+        opacity: 1;
+    }
+    
+    .action-button {
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        margin-left: 8px;
+        padding: 4px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+    
+    .user .action-button {
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .user .action-button:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .assistant .action-button {
+        color: #6b7280;
+    }
+    
+    .assistant .action-button:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    /* 打字指示器样式 */
+    .typing-indicator {
+        display: flex;
+        align-items: center;
+        padding: 4px 0;
+    }
+    
+    .typing-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #d1d5db;
+        border-radius: 50%;
+        margin-right: 4px;
+        animation: typing-dot 1.4s infinite ease-in-out;
+    }
+    
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes typing-dot {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-4px); }
+    }
+    
+    /* 模型选择器和高级设置 */
+    .model-selector-container {
+        display: flex;
+        align-items: center;
+    }
+    
+    .model-selector {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        font-size: 14px;
+        background-color: var(--content-bg-color);
+        color: var(--text-color);
+        margin-right: 8px;
+        min-width: 200px;
+    }
+    
+    .settings-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+        color: var(--secondary-text-color);
+        transition: background-color 0.2s;
+    }
+    
+    .settings-button:hover {
+        background-color: var(--highlight-bg);
+        color: var(--text-color);
+    }
+    
+    /* AI消息的Markdown内容样式 */
+    .assistant .message-body {
+        color: var(--assistant-msg-color);
+        font-size: 15px;
+        line-height: 1.6;
+    }
+    
+    /* 确保所有代码样式正确 */
+    .message-body pre {
+        background-color: var(--highlight-bg);
+        border-radius: 6px;
+        padding: 12px;
+        margin: 12px 0;
+        overflow-x: auto;
+        border: 1px solid var(--border-color);
+    }
+    
+    .message-body code {
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 14px;
+    }
+    
+    html[data-theme="dark"] .message-body pre {
+        background-color: #121212;
+        border-color: #333333;
+    }
+    
+    html[data-theme="dark"] .message-body pre code {
+        color: #c084fc;
+    }
+    
+    .message-body p code {
+        background-color: rgba(175, 184, 193, 0.2);
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+        font-size: 85%;
+    }
+    
+    html[data-theme="dark"] .message-body p code {
+        background-color: #1c1c1c;
+        color: #c084fc;
+        border: 1px solid #333333;
+    }
+    
+    /* 适当的间距和排版 */
+    .message-body p {
+        margin-bottom: 12px;
+    }
+    
+    .message-body h1, 
+    .message-body h2, 
+    .message-body h3, 
+    .message-body h4, 
+    .message-body h5, 
+    .message-body h6 {
+        margin-top: 20px;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+    
+    .message-body h1 { font-size: 1.8em; }
+    .message-body h2 { font-size: 1.5em; }
+    .message-body h3 { font-size: 1.3em; }
+    
+    .message-body ul, 
+    .message-body ol {
+        margin: 12px 0;
+        padding-left: 24px;
+    }
+    
+    .message-body li {
+        margin-bottom: 6px;
+    }
+    
+    .message-body blockquote {
+        border-left: 4px solid #e5e7eb;
+        padding-left: 12px;
+        color: #4b5563;
+        margin: 12px 0;
+    }
+    
+    /* 思考过程样式 */
+    .reasoning-content {
+        margin-top: 12px;
+        padding: 12px;
+        background-color: #f8f9fa;
+        border-left: 3px solid #6366f1;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #4b5563;
+        display: none;
+    }
+    
+    .reasoning-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #6366f1;
+    }
+    
+    .reasoning-toggle {
+        color: #6366f1;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        margin-top: 8px;
+    }
+    
+    .reasoning-toggle:hover {
+        text-decoration: underline;
+    }
+    
+    /* 黑暗模式下的聊天元素 */
+    html[data-theme="dark"] .reasoning-content {
+        background-color: #121212;
+        border-left-color: #8b5cf6;
+        color: #e2e8f0;
+    }
+    
+    html[data-theme="dark"] .reasoning-header {
+        color: #8b5cf6;
+    }
+    
+    html[data-theme="dark"] .reasoning-toggle {
+        color: #8b5cf6;
+    }
+    
+    html[data-theme="dark"] .model-dropdown {
+        background-color: #121212;
+        border: 1px solid #333333;
+    }
+    
+    html[data-theme="dark"] .vendor-list {
+        border-right-color: #333333;
+    }
+    
+    html[data-theme="dark"] .vendor-item:hover, 
+    html[data-theme="dark"] .model-item:hover {
+        background-color: #1c1c1c;
+    }
+    
+    html[data-theme="dark"] .vendor-item.active {
+        background-color: #1c1c1c;
+        border-left-color: #8b5cf6;
+    }
+    
+    html[data-theme="dark"] .model-select-button {
+        background-color: rgba(28, 28, 28, 0.8);
+    }
+    
+    html[data-theme="dark"] .model-select-button:hover {
+        background-color: rgba(45, 45, 45, 0.8);
+    }
+    
+    html[data-theme="dark"] #edit-title-modal .bg-white, 
+    html[data-theme="dark"] #advanced-settings-modal .bg-white {
+        background-color: #121212 !important;
+        color: #f8fafc;
+    }
+    
+    html[data-theme="dark"] #edit-title-modal h3, 
+    html[data-theme="dark"] #advanced-settings-modal h3 {
+        color: #f8fafc;
+    }
+    
+    html[data-theme="dark"] #edit-title-modal input,
+    html[data-theme="dark"] #advanced-settings-modal input {
+        background-color: #1c1c1c;
+        border-color: #333333;
+        color: #f8fafc;
+    }
+    
+    html[data-theme="dark"] .toggle-label {
+        background-color: #333333;
+    }
+    
+    html[data-theme="dark"] .toggle-checkbox:checked + .toggle-label {
+        background-color: #8b5cf6;
+    }
+    
+    /* 设置滚动条样式 */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--secondary-color);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--secondary-text-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="app-container">
+    <!-- 侧边栏 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="flex items-center mb-3">
+                <img src="{{ url_for('static', filename='logo.svg') }}" alt="luterUI Logo" class="h-8 w-auto">
+                <span class="ml-2 text-white text-lg font-semibold">luterUI</span>
+            </div>
+            <button id="new-chat-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center justify-center">
+                <i class="fas fa-plus mr-2"></i> 新对话
+            </button>
+        </div>
+        
+        <div class="sidebar-content" id="conversation-list">
+            {% for conversation in conversations %}
+            <div class="conversation-item {% if current_conversation.id == conversation.id %}active{% endif %}" data-id="{{ conversation.id }}">
+                <i class="fas fa-comment-alt"></i>
+                <div class="conversation-title">{{ conversation.title }}</div>
+                <button class="delete-conversation-btn" data-id="{{ conversation.id }}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="sidebar-footer">
+            <div class="flex items-center">
+                <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="ml-2 flex-1">
+                    <div class="text-sm font-medium text-white">{{ current_user.username }}</div>
+                </div>
+                <a href="{{ url_for('settings') }}" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fas fa-cog"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主聊天区域 -->
+    <div class="chat-container">
+        <!-- 聊天头部 -->
+        <div class="chat-header">
+            <div class="chat-title-area">
+                <button id="toggle-sidebar" class="toggle-sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="flex items-center flex-1">
+                    <h2 class="font-medium text-lg mr-2" id="current-conversation-title">{{ current_conversation.title }}</h2>
+                    <button id="edit-title-btn" class="ml-2 text-gray-500 hover:text-indigo-500 transition-colors">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="model-selector-container">
+                <div class="model-selector-wrapper">
+                    <button id="model-select-button" class="model-select-button">
+                        <span class="flex items-center truncate">
+                            <span class="vendor-badge">硅基</span>
+                            <i class="fas fa-robot current-model-icon"></i>
+                            <span id="current-model-display" class="truncate">{{ current_user.default_model }}</span>
+                        </span>
+                        <i class="fas fa-chevron-down ml-1"></i>
+                    </button>
+                    <div id="model-dropdown" class="model-dropdown">
+                        <div class="model-dropdown-content">
+                            <div class="vendor-list" id="vendor-list">
+                                <!-- 供应商列表将通过JS生成 -->
+                            </div>
+                            <div class="model-list" id="model-list">
+                                <!-- 模型列表将通过JS生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <select id="model-selector" class="model-selector" style="display: none;">
+                    {% for model in models %}
+                    <option value="{{ model }}" {% if current_user.default_model == model %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                </select>
+                <button id="advanced-settings-btn" class="settings-button" title="高级设置">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 聊天消息区域 -->
+        <div class="chat-messages" id="chat-messages">
+            {% for message in messages %}
+            <div class="message-container {{ message.role }}">
+                <div class="message-content">
+                    <div class="message-header">
+                        <span>{{ '你' if message.role == 'user' else 'luterUI' }}</span>
+                        {% if message.role == 'assistant' and ('<reasoning>' in message.content or '<answer>' in message.content) %}
+                            <button class="reasoning-toggle-top">
+                                <i class="fas fa-brain mr-1"></i> 显示思考过程
+                            </button>
+                        {% endif %}
+                    </div>
+                    {% if message.role == 'assistant' and '<answer>' in message.content and '<reasoning>' in message.content %}
+                        {% set answer_content = message.content.split('<answer>')[1].split('</answer>')[0] %}
+                        {% set reasoning_content = message.content.split('<reasoning>')[1].split('</reasoning>')[0] %}
+                        
+                        <div class="reasoning-content" style="display: none;">
+                            <div class="reasoning-header">
+                                <i class="fas fa-brain mr-2"></i> 思考过程
+                            </div>
+                            <div class="reasoning-body">{{ reasoning_content|safe }}</div>
+                        </div>
+                        
+                        <div class="message-body markdown-body">{{ answer_content|safe }}</div>
+                    {% else %}
+                        <div class="message-body markdown-body" {% if message.role == 'assistant' %}data-raw-content="{{ message.content|e }}"{% endif %}>
+                        {% if message.role == 'assistant' %}
+                            <!-- AI消息的内容将通过JavaScript处理 -->
+                        {% else %}
+                            {{ message.content|safe }}
+                        {% endif %}
+                        </div>
+                    {% endif %}
+                    
+                    {% if message.role == 'assistant' %}
+                    <!-- 修改为单行横向排列的消息操作按钮 -->
+                    <div class="message-actions-bottom">
+                        <div class="actions-row">
+                            <button class="action-button like-btn" title="有帮助">
+                                <i class="fas fa-thumbs-up"></i>
+                            </button>
+                            <button class="action-button dislike-btn" title="没帮助">
+                                <i class="fas fa-thumbs-down"></i>
+                            </button>
+                            <button class="action-button regenerate-btn" title="重新回答">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                            <button class="action-button favorite-btn" title="收藏">
+                                <i class="far fa-star"></i>
+                            </button>
+                            <button class="action-button copy-btn" title="复制">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="action-button view-markdown-btn" title="查看Markdown" style="display: none;">
+                                <i class="fas fa-file-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 聊天输入区域 -->
+        <div class="chat-input-container {% if not messages %}new-conversation{% endif %}">
+            <form id="chat-form">
+                <input type="hidden" id="conversation-id" value="{{ current_conversation.id }}">
+                <div class="chat-input-wrapper">
+                    <textarea id="message-input" class="chat-input" placeholder="输入消息..." rows="1"></textarea>
+                    <button type="submit" class="send-button">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑对话标题的模态框 -->
+<div id="edit-title-modal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-gray-900 bg-opacity-50"></div>
+    <div class="relative z-10 flex items-center justify-center h-full">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">编辑对话标题</h3>
+            <form id="edit-title-form">
+                <input type="text" id="conversation-title-input" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="输入标题">
+                <div class="mt-4 flex justify-end space-x-3">
+                    <button type="button" id="cancel-edit-title" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        取消
+                    </button>
+                    <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        保存
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 高级设置模态框 -->
+<div id="advanced-settings-modal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-gray-900 bg-opacity-50"></div>
+    <div class="relative z-10 flex items-center justify-center h-full">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">高级设置</h3>
+                <button id="close-advanced-settings" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <label class="block text-sm font-medium text-gray-700">流式输出</label>
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                        <input type="checkbox" id="stream-toggle" name="stream" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked>
+                        <label for="stream-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="max-tokens-slider" class="block text-sm font-medium text-gray-700">最大输出长度</label>
+                    <div class="mt-1 flex items-center">
+                        <input type="range" id="max-tokens-slider" name="max_tokens" min="16" max="16384" value="1024" class="w-full settings-slider">
+                        <span id="max-tokens-value" class="ml-2 text-sm text-gray-500 w-16 text-right cursor-pointer">1024</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 italic">提示：点击数值可直接编辑</p>
+                </div>
+                
+                <div>
+                    <label for="temperature-slider" class="block text-sm font-medium text-gray-700">温度（创造性）</label>
+                    <div class="mt-1 flex items-center">
+                        <input type="range" id="temperature-slider" name="temperature" min="0" max="2" step="0.1" value="0.7" class="w-full settings-slider">
+                        <span id="temperature-value" class="ml-2 text-sm text-gray-500 w-16 text-right cursor-pointer">0.7</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="top-p-slider" class="block text-sm font-medium text-gray-700">Top P</label>
+                    <div class="mt-1 flex items-center">
+                        <input type="range" id="top-p-slider" name="top_p" min="0" max="1" step="0.05" value="0.7" class="w-full settings-slider">
+                        <span id="top-p-value" class="ml-2 text-sm text-gray-500 w-16 text-right cursor-pointer">0.7</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="top-k-slider" class="block text-sm font-medium text-gray-700">Top K</label>
+                    <div class="mt-1 flex items-center">
+                        <input type="range" id="top-k-slider" name="top_k" min="0" max="100" step="1" value="50" class="w-full settings-slider">
+                        <span id="top-k-value" class="ml-2 text-sm text-gray-500 w-16 text-right cursor-pointer">50</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="frequency-penalty-slider" class="block text-sm font-medium text-gray-700">频率惩罚</label>
+                    <div class="mt-1 flex items-center">
+                        <input type="range" id="frequency-penalty-slider" name="frequency_penalty" min="0" max="2" step="0.1" value="0.5" class="w-full settings-slider">
+                        <span id="frequency-penalty-value" class="ml-2 text-sm text-gray-500 w-16 text-right cursor-pointer">0.5</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="stop-sequences" class="block text-sm font-medium text-gray-700">停止序列（逗号分隔）</label>
+                    <div class="mt-1">
+                        <input type="text" id="stop-sequences" name="stop" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="例如: ###, ===">
+                    </div>
+                </div>
+                
+                <div class="pt-2">
+                    <span id="settings-save-status" class="text-sm text-green-600 hidden"></span>
+                </div>
+                
+                <div class="flex justify-between space-x-3 pt-4 border-t border-gray-200">
+                    <button type="button" id="reset-settings" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        重置默认
+                    </button>
+                    <button type="button" id="save-settings" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        保存设置
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Markdown查看器 -->
+<div id="markdown-viewer" class="markdown-viewer hidden">
+    <div class="md-toolbar">
+        <div class="flex items-center">
+            <button class="md-close-btn" id="close-markdown-viewer">
+                <i class="fas fa-times"></i>
+            </button>
+            <h3 class="ml-4 text-lg font-medium">Markdown查看器</h3>
+        </div>
+        <button class="md-download-btn" id="download-markdown">
+            <i class="fas fa-download mr-2"></i> 下载
+        </button>
+    </div>
+    <iframe id="markdown-iframe" class="md-iframe" frameborder="0"></iframe>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/languages/javascript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/languages/python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/languages/java.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/languages/bash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@4.2.12/marked.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+    // 确保页面加载时对历史消息应用markdown渲染
+    document.addEventListener('DOMContentLoaded', function() {
+        // 处理所有AI消息
+        const assistantMessages = document.querySelectorAll('.message-container.assistant .message-body.markdown-body');
+        
+        function renderAllMessages() {
+            assistantMessages.forEach(function(messageBody) {
+                // 跳过已经有脚本标签的消息（inline脚本已经处理过的）
+                if (messageBody.querySelector('script')) {
+                    return;
+                }
+                
+                // 清理内容
+                const rawContent = messageBody.textContent.trim();
+                
+                // 只处理非空消息
+                if (rawContent && !rawContent.startsWith('<answer>')) {
+                    try {
+                        // 使用marked渲染内容
+                        messageBody.innerHTML = marked.parse(rawContent);
+                        
+                        // 应用语法高亮
+                        messageBody.querySelectorAll('pre code').forEach(function(block) {
+                            hljs.highlightElement(block);
+                        });
+                        
+                        // 渲染LaTeX公式
+                        if (typeof MathJax !== 'undefined' && typeof renderMathJax === 'function') {
+                            renderMathJax(messageBody);
+                        }
+                    } catch (e) {
+                        console.error('Markdown渲染错误:', e);
+                    }
+                }
+            });
+        }
+        
+        // 初始渲染
+        renderAllMessages();
+        
+        // 当MathJax完全加载好后，重新渲染所有消息以确保公式被正确处理
+        document.addEventListener('MathJaxReady', function() {
+            console.log('MathJax已准备好，重新渲染所有消息');
+            // 给MathJax额外时间处理DOM
+            setTimeout(function() {
+                // 对所有AI回答内容应用MathJax渲染
+                document.querySelectorAll('.message-container.assistant .message-body.markdown-body').forEach(function(messageBody) {
+                    if (typeof MathJax !== 'undefined') {
+                        MathJax.typesetPromise([messageBody]).catch(function(error) {
+                            console.error('MathJax渲染错误:', error);
+                        });
+                    }
+                });
+                
+                // 渲染思考过程中的公式
+                document.querySelectorAll('.reasoning-content').forEach(function(reasoningContent) {
+                    if (typeof MathJax !== 'undefined') {
+                        MathJax.typesetPromise([reasoningContent]).catch(function(error) {
+                            console.error('MathJax渲染错误:', error);
+                        });
+                    }
+                });
+            }, 100);
+        });
+    });
+</script>
+{% endblock %} 
